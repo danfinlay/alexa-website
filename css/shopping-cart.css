@@ -1,0 +1,13 @@
+#cartIcon{
+  position:absolute;
+  right:40px;
+  font-family:sans-serif;
+}
+
+#cartIcon > img {
+  width:20px;
+}
+
+.menu-item{
+  cursor:pointer;
+}
