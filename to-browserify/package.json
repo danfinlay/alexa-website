@@ -1,0 +1,22 @@
+{
+  "name": "alexa-finlay-website",
+  "version": "1.0.0",
+  "description": "The personal website of Alexa Finlay.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/fasdy/alexa-website"
+  },
+  "author": "Dan Finlay",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fasdy/alexa-website/issues"
+  },
+  "homepage": "https://github.com/fasdy/alexa-website",
+  "dependencies": {
+    "cornershop": "^0.5.0"
+  }
+}
