@@ -48,11 +48,19 @@ function purchaseRequest (event) {
 // Just a placeholder method for showing the cart.
 // Haven't decided yet on same-page popover or a navigation change.
 function showCart (cart) {
+  var cartEl = document.getElementById('cart');
+
   var result = 'Your cart:\n';
   cart.items.forEach(function(item){
     result += item.name + ' ('+item.qty+'): $'+item.price*item.qty+'\n';
   });
-  alert(result);
+  var spans = cartEl.getElementsByTagName('p');
+  spans[0].innerText = result;
+
+  cartEl.className = '';
+
+  var blocker = document.getElementById('blocker');
+  blocker.className = '';
 }
 
 function getItemById (id) {

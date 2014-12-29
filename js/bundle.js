@@ -1302,7 +1302,7 @@ var domReady = require('domready');
 
 var thingsForSale = JSON.parse(Buffer("WwogIHsKICAgICJpZCI6MSwKICAgICJuYW1lIjoiUGV0IFBvcnRyYWl0IiwKICAgICJkZXNjIjoiNHg1IGluY2ggYWNyeWxsaWMgb24gY2FudmFzIFBldCBQb3J0cmFpdCIsCiAgICAicHJpY2UiOjEyNSwKICAgICJpbWFnZSI6ImltYWdlcy9QZXRQYWludGluZy1Sb29raWUtNjAweC5qcGciCiAgfSwKICB7CiAgICAiaWQiOjIsCiAgICAibmFtZSI6IkxhbmRzY2FwZSBQYWludGluZyIsCiAgICAiZGVzYyI6IjR4NSBpbmNoIGFjcnlsbGljIG9uIGNhbnZhcyIsCiAgICAicHJpY2UiOjEyNSwKICAgICJpbWFnZSI6ImltYWdlcy9Nb250ZXJleU5vMS0xNkRlYzIwMTQtNjAweC5qcGciCiAgfQpdCg==","base64").toString());
 
-var menuItemTemplate = Buffer("PGxpIGNsYXNzPSJtZW51LWl0ZW0iIGRhdGEtaWQ9Int7aWR9fSI+CiAgPGgzPnt7bmFtZX19PC9oMz4KICA8cD57e2Rlc2N9fTwvcD4KICA8aW1nIHNyYz0ie3tpbWFnZX19Ij48YnI+CiAgPHN0cm9uZz57e3ByaWNlfX08L3N0cm9uZz4KPC9saT4K","base64").toString();
+var menuItemTemplate = Buffer("PGxpIGNsYXNzPSJtZW51LWl0ZW0iIGRhdGEtaWQ9Int7aWR9fSI+CiAgPGgzPnt7bmFtZX19PC9oMz4KICA8cD57e2Rlc2N9fTwvcD4KICA8aW1nIHNyYz0ie3tpbWFnZX19Ij48YnI+CiAgPHN0cm9uZz4ke3twcmljZX19PC9zdHJvbmc+CjwvbGk+Cg==","base64").toString();
 
 domReady(function(){
 
@@ -1346,11 +1346,19 @@ function purchaseRequest (event) {
 // Just a placeholder method for showing the cart.
 // Haven't decided yet on same-page popover or a navigation change.
 function showCart (cart) {
+  var cartEl = document.getElementById('cart');
+
   var result = 'Your cart:\n';
   cart.items.forEach(function(item){
     result += item.name + ' ('+item.qty+'): $'+item.price*item.qty+'\n';
   });
-  alert(result);
+  var spans = cartEl.getElementsByTagName('p');
+  spans[0].innerText = result;
+
+  cartEl.className = '';
+
+  var blocker = document.getElementById('blocker');
+  blocker.className = '';
 }
 
 function getItemById (id) {
