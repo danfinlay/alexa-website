@@ -2,18 +2,33 @@ var fs = require('fs');
 var render = require('./simpleMustache');
 var cartIcon = require('./cartIcon');
 
-var menuItemTemplate = fs.readFileSync(__dirname+'/../templates/menu-item.html').toString();
+var menuItemTemplate = fs.readFileSync(__dirname+'/../templates/menu-item.ms').toString();
 
-module.exports = new MenuController();
+var menuController = new MenuController();
+module.exports = menuController;
 
 function MenuController (){
 
+  this.init                = init;
   this.renderMenu          = renderMenu;
   this.listenForMenuClicks = listenForMenuClicks;
 
+  this.getItemById = getItemById;
+
 }
 
-function renderMenu (thingsForSale) {
+function init (cart, thingsForSale) {
+
+  this.cart = cart;
+  this.thingsForSale = thingsForSale;
+
+  this.renderMenu();
+  this.listenForMenuClicks( thingsForSale, cart );
+
+}
+
+function renderMenu () {
+  var thingsForSale = this.thingsForSale;
   var menu = document.getElementById('shoppingMenu');
   menu.innerText = '';
   var list = document.createElement('OL');
@@ -25,6 +40,7 @@ function renderMenu (thingsForSale) {
 }
 
 function listenForMenuClicks(thingsForSale, cart){
+  this.cart = cart;
   var things = document.getElementsByClassName('menu-item');
   console.log("We have %s things", things.length);
   for( var i = 0; i < things.length; i++ ){
@@ -36,11 +52,9 @@ function listenForMenuClicks(thingsForSale, cart){
 }
 
 function purchaseRequest (event) {
-  var cart = shop('alexa-finlay-art-store');
-  cart.load();
-
+  var cart = menuController.cart;
   var id = this.getAttribute('data-id');
-  var toAdd = getItemById( id );
+  var toAdd = menuController.getItemById( id );
   cart.addItem( toAdd );
   cartIcon.updateCartLabel(cart);
   cart.save();
@@ -61,7 +75,8 @@ function showCart (cart) {
 
 function getItemById (id) {
   var result;
-  thingsForSale.forEach(function(thing){
+
+  this.thingsForSale.forEach(function(thing){
     if(parseInt(thing.id) === parseInt(id)){
       result = thing;
     }

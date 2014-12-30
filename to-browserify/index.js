@@ -4,16 +4,15 @@ var domReady = require('domready');
 
 var thingsForSale = JSON.parse(fs.readFileSync(__dirname+'/thingsForSale.json').toString());
 
-var menuItemTemplate = fs.readFileSync(__dirname+'/templates/menu-item.html').toString();
-
 var menuController = require('./lib/menu');
+var cartController = require('./lib/cart');
 var cartIcon       = require('./lib/cartIcon');
+
+var cart = shop('alexa-finlay-art-store');
+cart.load();
 
 // Once the page is loaded, this function is called:
 domReady(function(){
-
-  var cart = shop('alexa-finlay-art-store');
-  cart.load();
 
   cartIcon.updateCartLabel( cart );
   runController();
@@ -28,11 +27,10 @@ function runController(){
 
   switch (loc) {
     case 'shop':
-      menuController.renderMenu( thingsForSale );
-      menuController.listenForMenuClicks( thingsForSale, cart );
+      menuController.init( cart, thingsForSale );
       break;
     case 'cart':
-
+      cartController.init(cart, thingsForSale);
       break;
   }
 }

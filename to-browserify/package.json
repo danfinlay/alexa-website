@@ -19,6 +19,7 @@
   "dependencies": {
     "brfs": "^1.2.0",
     "cornershop": "^0.5.0",
-    "domready": "^1.0.7"
+    "domready": "^1.0.7",
+    "mustache": "^1.0.0"
   }
 }

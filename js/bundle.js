@@ -1302,16 +1302,15 @@ var domReady = require('domready');
 
 var thingsForSale = JSON.parse(Buffer("WwogIHsKICAgICJpZCI6MSwKICAgICJuYW1lIjoiUGV0IFBvcnRyYWl0IiwKICAgICJkZXNjIjoiNHg1IGluY2ggYWNyeWxsaWMgb24gY2FudmFzIFBldCBQb3J0cmFpdCIsCiAgICAicHJpY2UiOjEyNSwKICAgICJpbWFnZSI6ImltYWdlcy9QZXRQYWludGluZy1Sb29raWUtNjAweC5qcGciCiAgfSwKICB7CiAgICAiaWQiOjIsCiAgICAibmFtZSI6IkxhbmRzY2FwZSBQYWludGluZyIsCiAgICAiZGVzYyI6IjR4NSBpbmNoIGFjcnlsbGljIG9uIGNhbnZhcyIsCiAgICAicHJpY2UiOjEyNSwKICAgICJpbWFnZSI6ImltYWdlcy9Nb250ZXJleU5vMS0xNkRlYzIwMTQtNjAweC5qcGciCiAgfQpdCg==","base64").toString());
 
-var menuItemTemplate = Buffer("PGxpIGNsYXNzPSJtZW51LWl0ZW0iIGRhdGEtaWQ9Int7aWR9fSI+CiAgPGgzPnt7bmFtZX19PC9oMz4KICA8cD57e2Rlc2N9fTwvcD4KICA8aW1nIHNyYz0ie3tpbWFnZX19Ij48YnI+CiAgPHN0cm9uZz4ke3twcmljZX19PC9zdHJvbmc+CjwvbGk+Cg==","base64").toString();
-
 var menuController = require('./lib/menu');
+var cartController = require('./lib/cart');
 var cartIcon       = require('./lib/cartIcon');
+
+var cart = shop('alexa-finlay-art-store');
+cart.load();
 
 // Once the page is loaded, this function is called:
 domReady(function(){
-
-  var cart = shop('alexa-finlay-art-store');
-  cart.load();
 
   cartIcon.updateCartLabel( cart );
   runController();
@@ -1326,11 +1325,10 @@ function runController(){
 
   switch (loc) {
     case 'shop':
-      menuController.renderMenu( thingsForSale );
-      menuController.listenForMenuClicks( thingsForSale, cart );
+      menuController.init( cart, thingsForSale );
       break;
     case 'cart':
-
+      cartController.init(cart, thingsForSale);
       break;
   }
 }
@@ -1338,7 +1336,166 @@ function runController(){
 
 
 }).call(this,require("buffer").Buffer)
-},{"./lib/cartIcon":"/Volumes/Deinonychus/creation/alexa-website/to-browserify/lib/cartIcon.js","./lib/menu":"/Volumes/Deinonychus/creation/alexa-website/to-browserify/lib/menu.js","buffer":"/Users/danielfinlay/.node/lib/node_modules/watchify/node_modules/browserify/node_modules/buffer/index.js","cornershop":"/Volumes/Deinonychus/creation/alexa-website/to-browserify/node_modules/cornershop/index.js","domready":"/Volumes/Deinonychus/creation/alexa-website/to-browserify/node_modules/domready/ready.js"}],"/Volumes/Deinonychus/creation/alexa-website/to-browserify/lib/cartIcon.js":[function(require,module,exports){
+},{"./lib/cart":"/Volumes/Deinonychus/creation/alexa-website/to-browserify/lib/cart.js","./lib/cartIcon":"/Volumes/Deinonychus/creation/alexa-website/to-browserify/lib/cartIcon.js","./lib/menu":"/Volumes/Deinonychus/creation/alexa-website/to-browserify/lib/menu.js","buffer":"/Users/danielfinlay/.node/lib/node_modules/watchify/node_modules/browserify/node_modules/buffer/index.js","cornershop":"/Volumes/Deinonychus/creation/alexa-website/to-browserify/node_modules/cornershop/index.js","domready":"/Volumes/Deinonychus/creation/alexa-website/to-browserify/node_modules/domready/ready.js"}],"/Volumes/Deinonychus/creation/alexa-website/to-browserify/lib/cart.js":[function(require,module,exports){
+(function (Buffer){
+var render = require('./simpleMustache');
+
+
+var cartItemTemplate = Buffer("PGxpIGNsYXNzPSJjYXJ0LWl0ZW0iIGRhdGEtaWQ9Int7aWR9fSI+CiAgPHNwYW4+e3tuYW1lfX08L3NwYW4+CiAgPHNwYW4+e3txdHl9fTwvc3Bhbj4KICA8c3Bhbj57e3ByaWNlfX08L3NwYW4+CiAgPHNwYW4+e3t0b3RhbH19PC9zcGFuPgogIDxidXR0b24gY2xhc3M9ImFkZEl0ZW0iIGRhdGEtaWQ9Int7aWR9fSI+KzwvYnV0dG9uPgogIDxidXR0b24gY2xhc3M9InJlbW92ZUl0ZW0iIGRhdGEtaWQ9Int7aWR9fSI+LTwvYnV0dG9uPgo8L2xpPgo=","base64").toString();
+
+var cartController = new CartController();
+module.exports = cartController;
+
+function CartController(){
+  this.init = init;
+  this.renderCart = renderCart;
+  this.listenForClicks = listenForClicks;
+
+  this.listenForAddClicks = listenForAddClicks;
+  this.listenForRemoveClicks = listenForRemoveClicks;
+
+  this.itemForSaleById = itemForSaleById;
+  this.itemInCartById  = itemInCartById;
+}
+
+function init (cart, thingsForSale) {
+  this.cart = cart;
+  this.thingsForSale = thingsForSale;
+
+  this.renderCart();
+}
+
+function renderCart () {
+
+  var items = addTotalsToItems( this.cart.items );
+
+  var totalEl = document.getElementById('cartTotal');
+
+  var list = document.getElementById('shoppingList');
+  clearPreviousOlsFrom( list );
+
+  var ol = document.createElement('OL');
+  list.insertBefore(ol, totalEl);
+
+  items.forEach(function(item){
+    ol.innerHTML += render( item, cartItemTemplate );
+  });
+
+  var total = this.cart.getTotal(true);
+  totalEl.innerText = textForTotal( total );
+
+  this.listenForClicks();
+}
+
+function textForTotal( value ){
+  var result = "Total: $";
+  result += value.toFixed(2);
+  return result;
+}
+
+function addTotalsToItems( items ){
+  return items.map(function(item){
+    item.total = item.qty * item.price;
+    return item;
+  });
+}
+
+function listenForClicks(){
+
+  this.listenForAddClicks();
+  this.listenForRemoveClicks();
+
+}
+
+function listenForAddClicks(){
+  var things = document.getElementsByClassName('addItem');
+  for( var i = 0; i < things.length; i++ ){
+    things[i].addEventListener('click', addItem);
+  }
+}
+
+function listenForRemoveClicks(){
+  var things = document.getElementsByClassName('removeItem');
+  for( var i = 0; i < things.length; i++ ){
+    things[i].addEventListener('click', removeItem);
+  }
+}
+
+function removeOldListeners(){
+  unlistenForRemoveClicks();
+  unlistenForAddClicks();
+}
+
+function unlistenForAddClicks(){
+  var things = document.getElementsByClassName('addItem');
+  for( var i = 0; i < things.length; i++ ){
+    things[i].removeEventListener('click', addItem);
+  }
+}
+
+function unlistenForRemoveClicks(){
+  var things = document.getElementsByClassName('removeItem');
+  for( var i = 0; i < things.length; i++ ){
+    things[i].removeEventListener('click', removeItem);
+  }
+}
+
+function addItem (event) {
+  var id = this.getAttribute('data-id');
+
+  var item = cartController.itemForSaleById( id );
+  cartController.cart.addItem(item);
+  cartController.cart.save();
+  cartController.renderCart();
+}
+
+function removeItem (event) {
+  var id = this.getAttribute('data-id');
+
+  for( var i = 0; i < cartController.cart.items.length; i++){
+    if( parseInt(cartController.cart.items[i].id) === parseInt(id)){
+      cartController.cart.items[i].qty--;
+    }
+  }
+  cartController.cart.save();
+  cartController.renderCart();
+}
+
+function clearPreviousOlsFrom( list ){
+
+  removeOldListeners();
+
+  var ols = list.getElementsByTagName('ol');
+  while( ols.length > 0 ){
+    list.removeChild(ols[0]);
+    ols = list.getElementsByTagName('ol');
+  }
+}
+
+function itemForSaleById (id) {
+  id = parseInt( id );
+  var result;
+  this.thingsForSale.forEach(function(thing){
+    if(parseInt(thing.id) === id){
+      result = thing;
+    }
+  });
+  return result;
+}
+
+function itemInCartById(id) {
+  id = parseInt( id );
+  var result;
+  this.cart.forEach(function(thing){
+    if(parseInt(thing.id) === id){
+      result = thing;
+    }
+  });
+  return result;
+}
+
+}).call(this,require("buffer").Buffer)
+},{"./simpleMustache":"/Volumes/Deinonychus/creation/alexa-website/to-browserify/lib/simpleMustache.js","buffer":"/Users/danielfinlay/.node/lib/node_modules/watchify/node_modules/browserify/node_modules/buffer/index.js"}],"/Volumes/Deinonychus/creation/alexa-website/to-browserify/lib/cartIcon.js":[function(require,module,exports){
 module.exports = {
   updateCartLabel: updateCartLabel,
   getTotalQty: getTotalQty,
@@ -1372,16 +1529,31 @@ var cartIcon = require('./cartIcon');
 
 var menuItemTemplate = Buffer("PGxpIGNsYXNzPSJtZW51LWl0ZW0iIGRhdGEtaWQ9Int7aWR9fSI+CiAgPGgzPnt7bmFtZX19PC9oMz4KICA8cD57e2Rlc2N9fTwvcD4KICA8aW1nIHNyYz0ie3tpbWFnZX19Ij48YnI+CiAgPHN0cm9uZz4ke3twcmljZX19PC9zdHJvbmc+CjwvbGk+Cg==","base64").toString();
 
-module.exports = new MenuController();
+var menuController = new MenuController();
+module.exports = menuController;
 
 function MenuController (){
 
+  this.init                = init;
   this.renderMenu          = renderMenu;
   this.listenForMenuClicks = listenForMenuClicks;
 
+  this.getItemById = getItemById;
+
 }
 
-function renderMenu (thingsForSale) {
+function init (cart, thingsForSale) {
+
+  this.cart = cart;
+  this.thingsForSale = thingsForSale;
+
+  this.renderMenu();
+  this.listenForMenuClicks( thingsForSale, cart );
+
+}
+
+function renderMenu () {
+  var thingsForSale = this.thingsForSale;
   var menu = document.getElementById('shoppingMenu');
   menu.innerText = '';
   var list = document.createElement('OL');
@@ -1393,6 +1565,7 @@ function renderMenu (thingsForSale) {
 }
 
 function listenForMenuClicks(thingsForSale, cart){
+  this.cart = cart;
   var things = document.getElementsByClassName('menu-item');
   console.log("We have %s things", things.length);
   for( var i = 0; i < things.length; i++ ){
@@ -1404,11 +1577,9 @@ function listenForMenuClicks(thingsForSale, cart){
 }
 
 function purchaseRequest (event) {
-  var cart = shop('alexa-finlay-art-store');
-  cart.load();
-
+  var cart = menuController.cart;
   var id = this.getAttribute('data-id');
-  var toAdd = getItemById( id );
+  var toAdd = menuController.getItemById( id );
   cart.addItem( toAdd );
   cartIcon.updateCartLabel(cart);
   cart.save();
@@ -1429,7 +1600,8 @@ function showCart (cart) {
 
 function getItemById (id) {
   var result;
-  thingsForSale.forEach(function(thing){
+
+  this.thingsForSale.forEach(function(thing){
     if(parseInt(thing.id) === parseInt(id)){
       result = thing;
     }
